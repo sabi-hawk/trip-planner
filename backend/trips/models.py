@@ -1,1 +1,1 @@
-# No database models are required; the planner is stateless.
+# Stateless app — no models needed.

@@ -9,8 +9,6 @@ from .services.routing import RoutingError, get_route
 
 
 class PlanTripView(APIView):
-    """Plan a trip: geocode -> route -> HOS simulation -> logs."""
-
     def post(self, request):
         serializer = PlanTripSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -36,7 +34,6 @@ class PlanTripView(APIView):
             {"distance_miles": leg.distance_miles, "duration_hours": leg.duration_hours}
             for leg in route.legs
         ]
-        # OSRM returns one leg per segment between waypoints; ensure two legs.
         if len(legs) < 2:
             half_d = route.distance_miles / 2
             half_h = route.duration_hours / 2

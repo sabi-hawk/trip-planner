@@ -20,3 +20,6 @@ dist/
 
 # Generated knowledge graph
 graphify-out/
+
+# Local-only notes (not for the repo)
+loom-notes.md

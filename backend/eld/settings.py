@@ -27,7 +27,7 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
-# Render injects RENDER_EXTERNAL_HOSTNAME at runtime.
+# Render sets this automatically in production.
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -113,7 +113,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS: allow the deployed frontend + local dev by default.
+# Frontend runs on localhost:5173 during dev.
 CORS_ALLOWED_ORIGINS = [
     o.strip()
     for o in os.environ.get(
@@ -122,19 +122,18 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if o.strip()
 ]
-# Allow Vercel preview/prod subdomains via regex when configured.
+# Vercel preview URLs match this pattern.
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
 ]
 
-# External service configuration.
+# Geocoding and routing services (all free, no API key).
 NOMINATIM_URL = os.environ.get(
     "NOMINATIM_URL", "https://nominatim.openstreetmap.org/search"
 )
 PHOTON_URL = os.environ.get("PHOTON_URL", "https://photon.komoot.io/api/")
 OSRM_URL = os.environ.get("OSRM_URL", "https://router.project-osrm.org")
-# A descriptive but accepted User-Agent. Public OSM services reject the default
-# python-requests agent, so we identify as a normal client.
+# Nominatim blocks the default python-requests user agent.
 GEO_USER_AGENT = os.environ.get(
     "GEO_USER_AGENT",
     "Mozilla/5.0 (compatible; ELDTripPlanner/1.0; +https://github.com/eld-trip-planner)",

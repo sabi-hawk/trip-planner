@@ -1,4 +1,4 @@
-"""Geocoding via OpenStreetMap services (Nominatim with a Photon fallback)."""
+# Turn a place name into lat/lon. Tries Nominatim first, then Photon.
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,7 +8,7 @@ from django.conf import settings
 
 
 class GeocodingError(Exception):
-    """Raised when a location string cannot be resolved to coordinates."""
+    pass
 
 
 @dataclass
@@ -60,7 +60,7 @@ def _geocode_photon(query: str, timeout: int) -> GeocodedLocation | None:
     if not features:
         return None
     top = features[0]
-    coords = top["geometry"]["coordinates"]  # [lon, lat]
+    coords = top["geometry"]["coordinates"]
     props = top.get("properties", {})
     name_parts = [
         props.get("name"),
@@ -75,11 +75,6 @@ def _geocode_photon(query: str, timeout: int) -> GeocodedLocation | None:
 
 
 def geocode(query: str, timeout: int = 15) -> GeocodedLocation:
-    """Resolve a free-form location string to coordinates.
-
-    Tries Nominatim first, then falls back to Photon if Nominatim is
-    unavailable or returns nothing. Both are free OSM-based services.
-    """
     query = (query or "").strip()
     if not query:
         raise GeocodingError("Empty location provided.")

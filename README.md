@@ -1,142 +1,209 @@
 # ELD Trip Planner
 
-A full-stack application that takes trip details as input and produces **route
-instructions with HOS-compliant stops** and **auto-drawn FMCSA daily log
-sheets**. Built with **Django REST Framework** (backend) and **React + Vite**
-(frontend), using free OpenStreetMap services for geocoding and routing.
+Full-stack app for planning truck routes and generating FMCSA daily log sheets. Enter three locations and your current cycle hours — get back a mapped route, HOS-compliant stops, and drawn daily logs.
 
-> Property-carrying driver · 70 hrs / 8 days · no adverse driving conditions ·
-> fuel at least every 1,000 miles · 1 hour each for pickup and drop-off.
+**Stack:** Django REST API (backend) + React/Vite (frontend)
 
 ---
 
-## Features
-
-- **Inputs:** current location, pickup location, drop-off location, and current
-  cycle hours used.
-- **Interactive route map** (Leaflet + OpenStreetMap) with the full driving
-  route and colored markers for start, pickup, drop-off, fuel stops, 30-minute
-  breaks, and 10-hour rests.
-- **Hours-of-Service engine** that enforces:
-  - 11-hour driving limit
-  - 14-hour on-duty window
-  - 30-minute break after 8 cumulative driving hours
-  - 70-hour / 8-day cycle (seeded by the input), with 34-hour restart
-  - 10-hour daily reset
-  - fueling every 1,000 miles, and 1-hour pickup/drop-off on-duty events
-- **Daily log sheets** drawn as authentic 24-hour FMCSA grids (Off Duty /
-  Sleeper Berth / Driving / On Duty), one sheet per day for multi-day trips,
-  with per-status totals.
-
----
-
-## Architecture
+## Project structure
 
 ```
-.
-├── backend/        Django + DRF API (geocode → route → HOS simulation)
-│   ├── eld/        project settings / urls / wsgi
-│   └── trips/      app: serializer, view, and services/
-│       └── services/  geocode.py, routing.py, hos.py
-└── frontend/       React + Vite SPA (form, map, log sheets)
-    └── src/components/  TripForm, RouteMap, StopsList, Summary, LogSheet
+eld-trip-planner/
+├── backend/          Django API
+│   ├── eld/          settings, urls
+│   └── trips/
+│       ├── views.py          POST /api/plan-trip/
+│       └── services/
+│           ├── geocode.py    address → lat/lon
+│           ├── routing.py    OSRM driving route
+│           └── hos.py        hours-of-service simulation
+└── frontend/         React SPA
+    └── src/
+        ├── api.js            calls the backend
+        └── components/       form, map, log sheets
 ```
-
-Data flow: the React form `POST`s to `/api/plan-trip/`. Django geocodes the
-three locations (Nominatim, with a Photon fallback), fetches a driving route
-(OSRM), runs the HOS simulation, and returns route geometry, an ordered list of
-stops, and structured daily logs which the frontend renders.
 
 ---
 
-## Local Development
+## How the two apps connect
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
+```
+Browser (localhost:5173)
+    │
+    │  POST /api/plan-trip/
+    │  { current_location, pickup_location, dropoff_location, current_cycle_used }
+    ▼
+Django API (localhost:8000)
+    │
+    ├─ geocode.py   → Nominatim / Photon (free, no API key)
+    ├─ routing.py   → OSRM public routing API
+    └─ hos.py       → simulates driving, rests, fuel, breaks
+    │
+    ▼
+JSON response → map geometry, stops list, daily_logs[]
+    │
+    ▼
+React renders map (Leaflet) + SVG log sheets
+```
 
-### 1. Backend
+The frontend reads the API URL from `frontend/.env`:
+
+```
+VITE_API_URL=http://localhost:8000
+```
+
+---
+
+## Setup
+
+You need Python 3.11+ and Node 18+.
+
+### Backend
 
 ```bash
 cd backend
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate
+
+# Mac/Linux
+source .venv/bin/activate
+
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-The API runs at `http://localhost:8000`. Test it directly:
+API is at http://localhost:8000
+
+Quick health check:
 
 ```bash
-curl -X POST http://localhost:8000/api/plan-trip/ \
-  -H "Content-Type: application/json" \
-  -d '{"current_location":"Los Angeles, CA","pickup_location":"Phoenix, AZ","dropoff_location":"Dallas, TX","current_cycle_used":8}'
+curl http://localhost:8000/
 ```
 
-### 2. Frontend
+### Frontend
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env   # ensure VITE_API_URL=http://localhost:8000
+```
+
+Copy the env file and point it at your local API:
+
+```bash
+copy .env.example .env        # Windows
+cp .env.example .env          # Mac/Linux
+```
+
+Then start the dev server:
+
+```bash
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+App opens at http://localhost:5173
+
+---
+
+## Test inputs
+
+Use the **"Load example trip"** link in the app, or enter these manually:
+
+### Standard trip (3 days, ~1,440 miles)
+
+| Field | Value |
+|-------|-------|
+| Current location | Los Angeles, California, United States |
+| Pickup location | Phoenix, Arizona, United States |
+| Drop-off location | Dallas, Texas, United States |
+| Current cycle used | 8 |
+
+**Expected:** ~1,440 mi, 3 daily log sheets, 1 fuel stop, 2 ten-hour rests.
+
+### Short trip (1 day)
+
+| Field | Value |
+|-------|-------|
+| Current location | Chicago, Illinois, United States |
+| Pickup location | Indianapolis, Indiana, United States |
+| Drop-off location | Detroit, Michigan, United States |
+| Current cycle used | 0 |
+
+**Expected:** ~300 mi, 1 log sheet, no fuel stop needed.
+
+### Long haul (multi-day, tests 34h restart)
+
+| Field | Value |
+|-------|-------|
+| Current location | Seattle, Washington, United States |
+| Pickup location | Denver, Colorado, United States |
+| Drop-off location | Miami, Florida, United States |
+| Current cycle used | 60 |
+
+**Expected:** ~3,500+ mi, 7+ log sheets, possible 34-hour cycle restart.
+
+### Invalid route (should show error)
+
+| Field | Value |
+|-------|-------|
+| Current location | Los Angeles, California, United States |
+| Pickup location | Honolulu, Hawaii, United States |
+| Drop-off location | Dallas, Texas, United States |
+| Current cycle used | 0 |
+
+**Expected:** Yellow warning in the form + backend error about no road route (Hawaii is not reachable by truck from the mainland).
+
+### API test via curl
+
+```bash
+curl -X POST http://localhost:8000/api/plan-trip/ ^
+  -H "Content-Type: application/json" ^
+  -d "{\"current_location\":\"Los Angeles, CA\",\"pickup_location\":\"Phoenix, AZ\",\"dropoff_location\":\"Dallas, TX\",\"current_cycle_used\":8}"
+```
+
+---
+
+## HOS rules modeled
+
+Property-carrying driver, 70hr/8day cycle:
+
+- 11 hours max driving per day
+- 14-hour on-duty window
+- 30-minute break after 8 hours of driving
+- 10-hour off-duty reset between days
+- 34-hour restart when hitting the 70-hour cycle limit
+- Fuel stop every 1,000 miles
+- 1 hour on-duty for pickup and dropoff
 
 ---
 
 ## Deployment
 
-The frontend deploys to **Vercel** and the backend to **Render** (both free
-tiers).
+| App | Platform | Root directory |
+|-----|----------|----------------|
+| Backend | Render | `backend` |
+| Frontend | Vercel | `frontend` |
 
-### Backend → Render
+**Backend env vars (Render):**
+- `DJANGO_DEBUG=false`
+- `DJANGO_SECRET_KEY=<random string>`
+- `CORS_ALLOWED_ORIGINS=https://your-app.vercel.app`
 
-1. Push this repo to GitHub.
-2. In Render, create a **New Web Service** from the repo. A
-   [`backend/render.yaml`](backend/render.yaml) blueprint is included, or set
-   manually:
-   - **Root Directory:** `backend`
-   - **Build Command:** `./build.sh`
-   - **Start Command:** `gunicorn eld.wsgi:application`
-3. Set environment variables:
-   - `DJANGO_DEBUG=false`
-   - `DJANGO_SECRET_KEY=<generate a strong value>`
-   - `CORS_ALLOWED_ORIGINS=https://<your-vercel-app>.vercel.app`
-4. Note the service URL, e.g. `https://eld-trip-planner-api.onrender.com`.
+**Frontend env vars (Vercel):**
+- `VITE_API_URL=https://your-api.onrender.com`
 
-> Vercel preview/production `*.vercel.app` origins are already allowed via a
-> CORS regex, so the app works even before you set `CORS_ALLOWED_ORIGINS`.
-
-### Frontend → Vercel
-
-1. In Vercel, **Import** the repo.
-   - **Root Directory:** `frontend`
-   - Framework preset: **Vite** (auto-detected via
-     [`frontend/vercel.json`](frontend/vercel.json)).
-2. Add an environment variable:
-   - `VITE_API_URL=https://<your-render-service>.onrender.com`
-3. Deploy. Vercel gives you the live `*.vercel.app` URL.
+See `backend/render.yaml` and `frontend/vercel.json` for deploy config.
 
 ---
 
-## Tech Stack
+## External services (all free)
 
-| Layer      | Tech                                                        |
-| ---------- | ----------------------------------------------------------- |
-| Backend    | Django 5, Django REST Framework, Gunicorn, WhiteNoise       |
-| Frontend   | React 18, Vite, react-leaflet, Leaflet, Axios              |
-| Geocoding  | OpenStreetMap Nominatim (Photon fallback) — free, no key   |
-| Routing    | OSRM public API — free, no key                              |
-| Maps/tiles | OpenStreetMap                                               |
-
-## Notes & Assumptions
-
-- The HOS engine models the standard interstate property-carrying rules listed
-  above. Average driving speed per leg is derived from the OSRM route estimate.
-- Public Nominatim/OSRM endpoints are rate-limited; for heavy production use,
-  swap `NOMINATIM_URL` / `OSRM_URL` (and add a key-based provider such as
-  OpenRouteService) via environment variables.
+| Service | Used for | Key needed? |
+|---------|----------|-------------|
+| Nominatim | Backend geocoding | No |
+| Photon | Frontend autocomplete + geocode fallback | No |
+| OSRM | Driving routes | No |
+| OpenStreetMap / CARTO | Map tiles | No |

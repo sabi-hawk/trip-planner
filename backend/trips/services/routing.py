@@ -1,4 +1,4 @@
-"""Routing via the public OSRM service."""
+# Driving route between waypoints via OSRM.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,13 +12,11 @@ METERS_PER_MILE = 1609.34
 
 
 class RoutingError(Exception):
-    """Raised when a route cannot be computed."""
+    pass
 
 
 @dataclass
 class RouteLeg:
-    """A single leg between two waypoints."""
-
     distance_miles: float
     duration_hours: float
 
@@ -27,7 +25,6 @@ class RouteLeg:
 class Route:
     distance_miles: float
     duration_hours: float
-    # Geometry as a list of [lat, lon] pairs (GeoJSON is [lon, lat]; we flip it).
     geometry: list[list[float]] = field(default_factory=list)
     legs: list[RouteLeg] = field(default_factory=list)
 
@@ -47,7 +44,6 @@ class Route:
 
 
 def get_route(waypoints: list[GeocodedLocation], timeout: int = 25) -> Route:
-    """Compute a driving route through the ordered waypoints using OSRM."""
     if len(waypoints) < 2:
         raise RoutingError("At least two waypoints are required for a route.")
 

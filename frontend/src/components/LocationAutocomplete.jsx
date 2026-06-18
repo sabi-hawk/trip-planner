@@ -49,19 +49,6 @@ function MapIcon() {
   );
 }
 
-/**
- * LocationAutocomplete
- *
- * Props:
- *   id (string)
- *   label (string)
- *   placeholder (string)
- *   value (string)        – controlled display value
- *   onChange (fn)         – called with { value, lat, lon, countrycode } on pick
- *                           or { value, lat: null, lon: null, countrycode: null } while typing
- *   accentColor (string)  – CSS color for the pin icon
- *   disabled (bool)
- */
 export default function LocationAutocomplete({
   id,
   label,
@@ -83,7 +70,6 @@ export default function LocationAutocomplete({
   const abortRef = useRef(null);
   const timerRef = useRef(null);
 
-  // Sync controlled value → local query when parent resets.
   useEffect(() => {
     setQuery(value || "");
     setConfirmed(!!value);
@@ -172,7 +158,6 @@ export default function LocationAutocomplete({
     }
   }
 
-  // Close on outside click.
   useEffect(() => {
     function onMouseDown(e) {
       if (

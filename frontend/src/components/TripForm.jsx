@@ -1,10 +1,7 @@
 import { useState } from "react";
 import LocationAutocomplete from "./LocationAutocomplete";
 
-// Country codes reachable by road from the contiguous USA.
 const ROAD_REACHABLE = new Set(["us", "ca", "mx"]);
-
-// Specific US states/territories that are islands (not road-reachable from continental US).
 const OCEAN_STATES = new Set(["hawaii", "puerto rico", "guam", "alaska"]);
 
 const STEPPER_FIELDS = [
@@ -61,7 +58,6 @@ function checkOceanWarning(locations) {
     if (!ROAD_REACHABLE.has(cc)) {
       return `One or more locations (${loc.value}) is outside the connected North American road network. Truck routing cannot cross oceans.`;
     }
-    // Special island check for Hawaii etc. using the display name.
     const name = loc.value.toLowerCase();
     for (const island of OCEAN_STATES) {
       if (name.includes(island)) {
@@ -111,6 +107,16 @@ export default function TripForm({ onSubmit, loading, error }) {
     dropoff_location:  { value: "", lat: null, lon: null, countrycode: null },
   });
   const [cycleHours, setCycleHours] = useState(0);
+  const [cycleDraft, setCycleDraft] = useState(null);
+
+  function commitCycleDraft(raw) {
+    if (raw === "" || raw === null) {
+      setCycleHours(0);
+      return;
+    }
+    const n = Math.min(70, Math.max(0, Number(raw)));
+    if (!Number.isNaN(n)) setCycleHours(n);
+  }
 
   function updateLocation(key, data) {
     setLocations((prev) => ({ ...prev, [key]: data }));
@@ -119,6 +125,7 @@ export default function TripForm({ onSubmit, loading, error }) {
   function loadExample() {
     setLocations(EXAMPLE);
     setCycleHours(8);
+    setCycleDraft(null);
   }
 
   function handleSubmit(e) {
@@ -138,19 +145,17 @@ export default function TripForm({ onSubmit, loading, error }) {
 
   const oceanWarning = allFilled ? checkOceanWarning(locations) : null;
 
-  const cyclePercent = ((cycleHours / 70) * 100).toFixed(1);
-  const cycleColor =
-    cycleHours < 50 ? "var(--stop-start)"
-    : cycleHours < 65 ? "var(--amber)"
-    : "var(--stop-dropoff)";
+  const cyclePercent = (cycleHours / 70) * 100;
+  const cycleFillColor =
+    cycleHours < 50 ? "#22c55e"
+    : cycleHours < 65 ? "#f97316"
+    : "#ef4444";
 
   return (
     <form onSubmit={handleSubmit} style={{ flex: 1 }}>
-      {/* ── Route stepper ── */}
       <div className="stepper">
         {STEPPER_FIELDS.map((field, idx) => (
           <div className="stepper-row" key={field.key}>
-            {/* Connector node */}
             <span
               className="stepper-node"
               style={{ background: field.nodeColor, border: "2.5px solid #1a1d27" }}
@@ -171,21 +176,46 @@ export default function TripForm({ onSubmit, loading, error }) {
         ))}
       </div>
 
-      {/* ── Cycle hours slider ── */}
       <div className="cycle-row">
         <div className="cycle-label-row">
           <span className="cycle-label">CURRENT CYCLE USED</span>
-          <span className="cycle-value" style={{ color: cycleColor }}>
-            {cycleHours}h
-            <span style={{ fontSize: "0.72rem", fontWeight: 400, color: "var(--text-muted-dark)", marginLeft: 4 }}>
-              / 70h
-            </span>
-          </span>
+          <div className="cycle-value-wrap">
+            <input
+              type="number"
+              className="cycle-number-input"
+              min="0"
+              max="70"
+              step="0.5"
+              value={cycleDraft !== null ? cycleDraft : cycleHours}
+              style={{ color: cycleFillColor, borderColor: `${cycleFillColor}55` }}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCycleDraft(v);
+                if (v !== "" && !Number.isNaN(Number(v))) {
+                  const n = Math.min(70, Math.max(0, Number(v)));
+                  setCycleHours(n);
+                }
+              }}
+              onBlur={() => {
+                if (cycleDraft !== null) {
+                  commitCycleDraft(cycleDraft);
+                  setCycleDraft(null);
+                }
+              }}
+              onFocus={() => setCycleDraft(String(cycleHours))}
+              disabled={loading}
+              aria-label="Current cycle hours used"
+            />
+            <span className="cycle-value-suffix">/ 70h</span>
+          </div>
         </div>
         <div className="cycle-track">
           <div
             className="cycle-fill"
-            style={{ width: `${cyclePercent}%`, background: `linear-gradient(90deg, ${cycleColor}cc, ${cycleColor})` }}
+            style={{
+              width: `${cyclePercent}%`,
+              background: `linear-gradient(90deg, ${cycleFillColor}bb, ${cycleFillColor})`,
+            }}
           />
           <input
             type="range"
@@ -194,15 +224,21 @@ export default function TripForm({ onSubmit, loading, error }) {
             max="70"
             step="0.5"
             value={cycleHours}
-            onChange={(e) => setCycleHours(Number(e.target.value))}
+            onInput={(e) => {
+              setCycleDraft(null);
+              setCycleHours(Number(e.target.value));
+            }}
+            onChange={(e) => {
+              setCycleDraft(null);
+              setCycleHours(Number(e.target.value));
+            }}
             disabled={loading}
-            aria-label="Current cycle hours used"
+            aria-label="Current cycle hours slider"
           />
         </div>
         <p className="cycle-hint">Hours already used in your 70hr / 8-day cycle.</p>
       </div>
 
-      {/* ── Ocean / reachability warning ── */}
       {oceanWarning && (
         <div className="banner warning">
           <span className="banner-icon"><WarnIcon /></span>
@@ -210,7 +246,6 @@ export default function TripForm({ onSubmit, loading, error }) {
         </div>
       )}
 
-      {/* ── API error ── */}
       {error && (
         <div className="banner error">
           <span className="banner-icon"><ErrorIcon /></span>
@@ -218,7 +253,6 @@ export default function TripForm({ onSubmit, loading, error }) {
         </div>
       )}
 
-      {/* ── Submit ── */}
       <button
         className="btn-submit"
         type="submit"
@@ -237,7 +271,6 @@ export default function TripForm({ onSubmit, loading, error }) {
         )}
       </button>
 
-      {/* ── Example link ── */}
       <div style={{ textAlign: "center", marginTop: 14 }}>
         <button
           type="button"

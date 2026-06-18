@@ -108,7 +108,6 @@ export default function Summary({ summary, locations }) {
         </span>
       </div>
 
-      {/* Route breadcrumb */}
       {locations && (
         <div className="route-path-bar">
           <span className="route-node">
@@ -128,7 +127,6 @@ export default function Summary({ summary, locations }) {
         </div>
       )}
 
-      {/* Stats grid */}
       <div className="stats-grid">
         {STATS.map((s) => (
           <div className="stat-cell" key={s.key}>

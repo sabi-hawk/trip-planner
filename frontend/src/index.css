@@ -2,11 +2,9 @@
 
 /* ── Token system ─────────────────────────────────────────────────────── */
 :root {
-  /* Base */
   --page-bg: #0f1117;
   --page-bg-2: #13151c;
 
-  /* Surfaces */
   --surface-dark: #1a1d27;
   --surface-dark-2: #21242f;
   --surface-dark-border: rgba(255, 255, 255, 0.07);
@@ -14,32 +12,27 @@
   --surface-light-2: #f7f8fb;
   --surface-light-border: #e8eaef;
 
-  /* Typography */
   --text-primary: #0f1117;
   --text-secondary: #5a6177;
   --text-on-dark: #e8eaf0;
   --text-muted-dark: #6b7394;
 
-  /* Brand */
   --amber: #f97316;
   --amber-dark: #ea580c;
   --amber-soft: rgba(249, 115, 22, 0.12);
   --amber-glow: rgba(249, 115, 22, 0.3);
 
-  /* Semantic */
   --blue: #3b82f6;
   --green: #22c55e;
   --red: #ef4444;
   --purple: #8b5cf6;
   --cyan: #06b6d4;
 
-  /* Duty status */
   --status-off: #94a3b8;
   --status-sleeper: #8b5cf6;
   --status-driving: #3b82f6;
   --status-onduty: #f97316;
 
-  /* Stop colors */
   --stop-start: #22c55e;
   --stop-pickup: #3b82f6;
   --stop-dropoff: #ef4444;
@@ -47,12 +40,10 @@
   --stop-rest: #8b5cf6;
   --stop-break: #06b6d4;
 
-  /* Radius */
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 18px;
 
-  /* Shadows */
   --shadow-card: 0 1px 3px rgba(0,0,0,0.07), 0 8px 28px rgba(0,0,0,0.09);
   --shadow-elevated: 0 4px 6px rgba(0,0,0,0.05), 0 20px 48px rgba(0,0,0,0.14);
 
@@ -215,7 +206,6 @@ html, body {
   margin-bottom: 24px;
 }
 
-/* Vertical connector line */
 .stepper::before {
   content: "";
   position: absolute;
@@ -238,7 +228,6 @@ html, body {
 }
 .stepper-row:last-child { margin-bottom: 0; }
 
-/* Connector node (circle on the line) */
 .stepper-node {
   position: absolute;
   left: -36px;
@@ -401,27 +390,80 @@ html, body {
   font-family: "DM Mono", monospace;
 }
 
+.cycle-value-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cycle-number-input {
+  width: 56px;
+  padding: 4px 6px;
+  background: var(--surface-dark-2);
+  border: 1px solid var(--surface-dark-border);
+  border-radius: 6px;
+  color: var(--amber);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: "DM Mono", monospace;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+.cycle-number-input::-webkit-outer-spin-button,
+.cycle-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cycle-number-input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px var(--amber-glow);
+}
+
+.cycle-value-suffix {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted-dark);
+  font-family: "DM Sans", sans-serif;
+}
+
 .cycle-track {
   position: relative;
-  height: 6px;
+  height: 8px;
   background: var(--surface-dark-2);
   border-radius: 99px;
   margin-bottom: 4px;
+  overflow: hidden;
 }
 
 .cycle-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 100%;
+  min-width: 0;
   border-radius: 99px;
   background: linear-gradient(90deg, var(--amber-dark), var(--amber));
   transition: width 0.15s;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .cycle-input {
   position: absolute;
-  inset: -6px 0;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 24px;
+  margin: 0;
   opacity: 0;
   cursor: pointer;
-  width: 100%;
+  z-index: 2;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .cycle-hint {

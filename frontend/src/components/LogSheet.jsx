@@ -39,7 +39,6 @@ function fmtTotal(h) {
 export default function LogSheet({ log, totalDays }) {
   const segments = log.segments || [];
 
-  // Build colored horizontal segments + vertical connectors.
   const horizontals = segments.map((seg, i) => {
     const idx = ROW_INDEX[seg.status];
     const row = ROWS[idx];
@@ -77,7 +76,6 @@ export default function LogSheet({ log, totalDays }) {
     }
   }
 
-  // Grid lines.
   const hourLines = [];
   for (let i = 0; i <= 24; i++) {
     const x = xForHour(i);
@@ -105,7 +103,6 @@ export default function LogSheet({ log, totalDays }) {
         {hourLabel(i)}
       </text>
     );
-    // Quarter-hour ticks inside each row.
     if (i < 24) {
       for (let q = 1; q < 4; q++) {
         const qx = xForHour(i + q / 4);
@@ -152,7 +149,6 @@ export default function LogSheet({ log, totalDays }) {
         role="img"
         aria-label={`Daily log grid for day ${log.day}`}
       >
-        {/* Top header labels */}
         <text x={8} y={GRID_TOP - 18} fontSize="9" fill="#94a3b8" fontWeight="700">
           MID
         </text>
@@ -167,7 +163,6 @@ export default function LogSheet({ log, totalDays }) {
           Total
         </text>
 
-        {/* Row backgrounds + labels + horizontal separators */}
         {ROWS.map((row, idx) => (
           <g key={row.key}>
             <rect
@@ -208,7 +203,6 @@ export default function LogSheet({ log, totalDays }) {
           </g>
         ))}
 
-        {/* Bottom border */}
         <line
           x1={GRID_LEFT}
           y1={GRID_TOP + ROWS.length * ROW_H}
@@ -217,7 +211,6 @@ export default function LogSheet({ log, totalDays }) {
           stroke="#94a3b8"
           strokeWidth="1"
         />
-        {/* Total column separators */}
         <line
           x1={TOTAL_X}
           y1={GRID_TOP}

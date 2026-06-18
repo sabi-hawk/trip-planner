@@ -6,18 +6,6 @@ import RouteMap from "./components/RouteMap";
 import StopsList from "./components/StopsList";
 import LogSheet from "./components/LogSheet";
 
-function TruckIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-      stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 17h4V5H2v12h3" />
-      <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1" />
-      <circle cx="7.5" cy="17.5" r="2.5" />
-      <circle cx="17.5" cy="17.5" r="2.5" />
-    </svg>
-  );
-}
-
 function RoadIcon() {
   return (
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -50,10 +38,8 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* ── Top nav ── */}
       <nav className="app-nav">
         <div className="nav-brand">
-          <span className="nav-brand-icon"><TruckIcon /></span>
           <div className="nav-brand-text">
             <strong>ELD Trip Planner</strong>
             <span>Route planning &amp; automated daily logs</span>
@@ -62,15 +48,12 @@ export default function App() {
         <span className="nav-badge">FMCSA 70hr / 8-day</span>
       </nav>
 
-      {/* ── Two-panel body ── */}
       <div className="app-body">
-        {/* Left: dispatch panel */}
         <aside className="panel-left">
           <p className="panel-left-title">Dispatch Details</p>
           <TripForm onSubmit={handlePlan} loading={loading} error={error} />
         </aside>
 
-        {/* Right: results */}
         <main className="panel-right">
           {!result && !loading && (
             <div className="card">

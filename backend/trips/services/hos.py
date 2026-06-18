@@ -1,20 +1,9 @@
-"""Hours-of-Service (HOS) simulation engine.
-
-Models a property-carrying driver under the 70hr/8day cycle and produces:
-  - an ordered list of stops (start, pickup, fuel, break, rest, dropoff)
-  - structured daily logs (per-day duty-status segments) ready to be drawn.
-
-Assumptions (per the assessment brief):
-  - Property-carrying driver, 70hrs/8days, no adverse driving conditions
-  - Fueling at least once every 1,000 miles
-  - 1 hour on duty for pickup and 1 hour on duty for dropoff
-"""
+# Simulates FMCSA hours-of-service for a property-carrying driver (70hr/8day).
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
 
-# Duty status identifiers (shared contract with the frontend).
 OFF_DUTY = "off_duty"
 SLEEPER = "sleeper_berth"
 DRIVING = "driving"
@@ -27,20 +16,19 @@ STATUS_LABELS = {
     ON_DUTY: "On Duty (not driving)",
 }
 
-# HOS rule constants.
-MAX_DRIVE_PER_DAY = 11.0       # 11-hour driving limit
-MAX_DUTY_WINDOW = 14.0         # 14-hour on-duty window
-BREAK_AFTER_DRIVING = 8.0      # 30-min break required after 8h driving
+MAX_DRIVE_PER_DAY = 11.0
+MAX_DUTY_WINDOW = 14.0
+BREAK_AFTER_DRIVING = 8.0
 BREAK_DURATION = 0.5
-DAILY_REST = 10.0              # 10 consecutive hours off resets the day
-CYCLE_LIMIT = 70.0            # 70 hours / 8 days
-CYCLE_RESTART = 34.0          # 34-hour restart
+DAILY_REST = 10.0
+CYCLE_LIMIT = 70.0
+CYCLE_RESTART = 34.0
 FUEL_INTERVAL_MILES = 1000.0
 FUEL_DURATION = 0.5
 PICKUP_DURATION = 1.0
 DROPOFF_DURATION = 1.0
 
-START_HOUR = 8.0              # driver begins the day at 08:00
+START_HOUR = 8.0
 EPS = 1e-6
 
 
@@ -55,8 +43,6 @@ def _haversine_miles(a: list[float], b: list[float]) -> float:
 
 @dataclass
 class _GeometryIndex:
-    """Maps a fractional position along the route to a [lat, lon] point."""
-
     points: list[list[float]]
     cumulative: list[float] = field(default_factory=list)
     total: float = 0.0
@@ -75,7 +61,6 @@ class _GeometryIndex:
             return self.points[0]
         fraction = max(0.0, min(1.0, fraction))
         target = fraction * self.total
-        # Binary-ish linear scan (geometry is modest in size).
         for i in range(1, len(self.cumulative)):
             if self.cumulative[i] >= target:
                 seg = self.cumulative[i] - self.cumulative[i - 1]
@@ -87,19 +72,11 @@ class _GeometryIndex:
 
 class TripSimulator:
     def __init__(self, legs, geometry, total_miles, current_cycle_used):
-        """
-        legs: list of dicts with keys distance_miles, duration_hours
-              [0] = current -> pickup, [1] = pickup -> dropoff
-        geometry: list of [lat, lon] route points
-        total_miles: total route distance
-        current_cycle_used: hours already used in the 70hr/8day cycle
-        """
         self.legs = legs
         self.total_miles = max(total_miles, 0.0)
         self.geo = _GeometryIndex(points=geometry)
         self.current_cycle_used = max(0.0, float(current_cycle_used))
 
-        # Simulation clock + counters.
         self.t = START_HOUR
         self.driving_today = 0.0
         self.driving_since_break = 0.0
@@ -111,7 +88,6 @@ class TripSimulator:
         self.events: list[dict] = []
         self.stops: list[dict] = []
 
-    # --- low level helpers -------------------------------------------------
     def _advance(self, status, hours, label=None):
         if hours <= EPS:
             return
@@ -139,7 +115,6 @@ class TripSimulator:
             }
         )
 
-    # --- HOS reset handlers ------------------------------------------------
     def _take_break(self):
         self._advance(OFF_DUTY, BREAK_DURATION, label="30-min break")
         self._add_stop("break", "30-minute break", self.miles_done)
@@ -173,11 +148,10 @@ class TripSimulator:
         self._add_stop(stop_type, label, at_miles)
         self._advance(ON_DUTY, duration, label=label)
 
-    # --- driving -----------------------------------------------------------
     def _drive(self, miles, hours):
         if miles <= EPS or hours <= EPS:
             return
-        speed = miles / hours  # mph for this leg
+        speed = miles / hours
         remaining_h = hours
         guard = 0
         while remaining_h > EPS:
@@ -218,21 +192,15 @@ class TripSimulator:
             self.miles_done += miles_chunk
             remaining_h -= chunk
 
-    # --- public ------------------------------------------------------------
     def run(self) -> dict:
-        # Start of trip.
         self._add_stop("start", "Trip start (current location)", 0.0)
 
         leg1 = self.legs[0] if len(self.legs) > 0 else {"distance_miles": 0, "duration_hours": 0}
         leg2 = self.legs[1] if len(self.legs) > 1 else {"distance_miles": 0, "duration_hours": 0}
 
-        # Drive to pickup.
         self._drive(leg1["distance_miles"], leg1["duration_hours"])
-        # 1 hour on duty: pickup.
         self._on_duty_event(PICKUP_DURATION, "Pickup (1h on duty)", "pickup", self.miles_done)
-        # Drive to dropoff.
         self._drive(leg2["distance_miles"], leg2["duration_hours"])
-        # 1 hour on duty: dropoff.
         self._on_duty_event(DROPOFF_DURATION, "Dropoff (1h on duty)", "dropoff", self.miles_done)
 
         return {
@@ -241,7 +209,6 @@ class TripSimulator:
             "summary": self._build_summary(),
         }
 
-    # --- output builders ---------------------------------------------------
     def _build_daily_logs(self) -> list[dict]:
         if not self.events:
             return []
@@ -294,7 +261,6 @@ class TripSimulator:
             filled.append(
                 {"status": OFF_DUTY, "start": round(cursor, 4), "end": 24.0, "label": None}
             )
-        # Merge adjacent same-status segments for cleaner drawing.
         merged = []
         for seg in filled:
             if merged and merged[-1]["status"] == seg["status"] and \
