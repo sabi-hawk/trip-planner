@@ -5,7 +5,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+
+# Local .env only — never override platform env vars (Railway, Render, etc.).
+if not os.environ.get("RAILWAY_ENVIRONMENT"):
+    load_dotenv(BASE_DIR / ".env", override=False)
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -15,17 +18,22 @@ def env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def env_hosts(name: str, default: str) -> list[str]:
+    raw = os.environ.get(name, default)
+    return [
+        h.strip().strip('"').strip("'")
+        for h in raw.split(",")
+        if h.strip().strip('"').strip("'")
+    ]
+
+
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY", "django-insecure-dev-key-change-me-in-production"
 )
 
 DEBUG = env_bool("DJANGO_DEBUG", True)
 
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if h.strip()
-]
+ALLOWED_HOSTS = env_hosts("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 # Render / Railway set these automatically in production.
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -35,6 +43,10 @@ if RENDER_EXTERNAL_HOSTNAME:
 RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if RAILWAY_PUBLIC_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+
+# Accept any Railway-generated public domain (*.up.railway.app).
+if os.environ.get("RAILWAY_ENVIRONMENT") or RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.extend([".up.railway.app", ".railway.app"])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
