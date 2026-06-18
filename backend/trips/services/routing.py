@@ -69,9 +69,24 @@ def get_route(waypoints: list[GeocodedLocation], timeout: int = 25) -> Route:
     except ValueError as exc:
         raise RoutingError("Invalid routing response.") from exc
 
-    if data.get("code") != "Ok" or not data.get("routes"):
+    code = data.get("code", "")
+    if code == "NoRoute" or (not data.get("routes") and code != "Ok"):
         raise RoutingError(
-            data.get("message", "No route could be found between the locations.")
+            "No road route exists between these locations. This usually happens when the "
+            "trip would require crossing an ocean or a large body of water with no road "
+            "or bridge connection (e.g. continental US to Hawaii, or cross-Atlantic). "
+            "Please make sure all three locations are reachable by road."
+        )
+    if code == "InvalidInput":
+        raise RoutingError(
+            "One or more of the provided locations could not be used for routing — "
+            "the coordinates may be in the ocean or outside of a mapped road network. "
+            "Please search for and select a valid address."
+        )
+    if code != "Ok" or not data.get("routes"):
+        raise RoutingError(
+            data.get("message")
+            or "The routing service could not compute a route. Please check your locations."
         )
 
     route = data["routes"][0]

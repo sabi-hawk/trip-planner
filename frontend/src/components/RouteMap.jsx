@@ -10,12 +10,12 @@ import {
 import L from "leaflet";
 
 const STOP_STYLE = {
-  start: { color: "#16a34a", label: "Start", letter: "S" },
-  pickup: { color: "#2563eb", label: "Pickup", letter: "P" },
-  dropoff: { color: "#dc2626", label: "Drop-off", letter: "D" },
-  fuel: { color: "#f59e0b", label: "Fuel", letter: "F" },
-  rest: { color: "#6366f1", label: "10h Rest", letter: "R" },
-  break: { color: "#0ea5e9", label: "30m Break", letter: "B" },
+  start:   { color: "#22c55e", label: "Start",       letter: "S" },
+  pickup:  { color: "#3b82f6", label: "Pickup",      letter: "P" },
+  dropoff: { color: "#ef4444", label: "Drop-off",    letter: "D" },
+  fuel:    { color: "#f97316", label: "Fuel",        letter: "F" },
+  rest:    { color: "#8b5cf6", label: "10h Rest",    letter: "R" },
+  break:   { color: "#06b6d4", label: "30m Break",   letter: "B" },
   restart: { color: "#8b5cf6", label: "34h Restart", letter: "34" },
 };
 
@@ -34,7 +34,7 @@ function makeIcon(type) {
         display:flex;align-items:center;justify-content:center;">
         <span style="transform:rotate(45deg);color:#fff;font-size:${
           big ? 12 : 9
-        }px;font-weight:700;font-family:Inter,sans-serif;">${s.letter}</span>
+        }px;font-weight:700;font-family:'DM Sans',sans-serif;">${s.letter}</span>
       </div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
@@ -75,14 +75,16 @@ export default function RouteMap({ geometry, stops, locations }) {
           scrollWheelZoom={true}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
+            maxZoom={19}
           />
           {geometry && geometry.length > 1 && (
             <>
               <Polyline
                 positions={geometry}
-                pathOptions={{ color: "#1d4ed8", weight: 5, opacity: 0.85 }}
+                pathOptions={{ color: "#f97316", weight: 4, opacity: 0.9 }}
               />
               <FitBounds geometry={geometry} />
             </>
@@ -105,10 +107,7 @@ export default function RouteMap({ geometry, stops, locations }) {
       <div className="map-legend">
         {LEGEND.map((t) => (
           <div className="legend-item" key={t}>
-            <span
-              className="legend-pin"
-              style={{ background: STOP_STYLE[t].color }}
-            />
+            <span className="legend-dot" style={{ background: STOP_STYLE[t].color }} />
             {STOP_STYLE[t].label}
           </div>
         ))}

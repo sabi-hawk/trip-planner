@@ -1,8 +1,8 @@
 const ROWS = [
-  { key: "off_duty", label: "1. Off Duty", color: "#94a3b8" },
-  { key: "sleeper_berth", label: "2. Sleeper Berth", color: "#6366f1" },
-  { key: "driving", label: "3. Driving", color: "#2563eb" },
-  { key: "on_duty", label: "4. On Duty (not driving)", color: "#f59e0b" },
+  { key: "off_duty",      label: "1. Off Duty",             color: "#94a3b8" },
+  { key: "sleeper_berth", label: "2. Sleeper Berth",        color: "#8b5cf6" },
+  { key: "driving",       label: "3. Driving",              color: "#3b82f6" },
+  { key: "on_duty",       label: "4. On Duty (not driving)", color: "#f97316" },
 ];
 
 const ROW_INDEX = {
