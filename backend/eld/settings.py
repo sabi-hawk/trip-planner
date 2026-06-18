@@ -31,11 +31,14 @@ SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY", "django-insecure-dev-key-change-me-in-production"
 )
 
-DEBUG = env_bool("DJANGO_DEBUG", True)
+DEBUG = env_bool("DJANGO_DEBUG", False)
 
 ALLOWED_HOSTS = env_hosts("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
-# Render / Railway set these automatically in production.
+# Platform domains — no env vars required (Railway vars often missing at runtime).
+ALLOWED_HOSTS.extend([".up.railway.app", ".railway.app", ".onrender.com"])
+
+# Render / Railway may also inject these (optional extras).
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -43,10 +46,6 @@ if RENDER_EXTERNAL_HOSTNAME:
 RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if RAILWAY_PUBLIC_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
-
-# Accept any Railway-generated public domain (*.up.railway.app).
-if os.environ.get("RAILWAY_ENVIRONMENT") or RAILWAY_PUBLIC_DOMAIN:
-    ALLOWED_HOSTS.extend([".up.railway.app", ".railway.app"])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
